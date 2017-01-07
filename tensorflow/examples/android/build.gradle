@@ -21,7 +21,13 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.3'
+        classpath 'com.android.tools.build:gradle:2.2.3'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
     }
 }
 
@@ -50,6 +56,16 @@ android {
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
     }
+//    externalNativeBuild {
+//        cmake {
+//            path 'jni/CMakeLists.txt'
+//        }
+//    }
+}
+
+dependencies {
+    compile 'com.squareup.picasso:picasso:2.5.2'
+    compile 'com.google.code.gson:gson:2.8.0'
 }
 
 task buildNative(type:Exec) {

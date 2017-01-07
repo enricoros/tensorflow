@@ -26,20 +26,30 @@ import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.os.Trace;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Display;
-import java.util.List;
-import java.util.Vector;
+import android.view.View;
+import android.widget.ImageView;
+
+import com.squareup.picasso.Picasso;
+
 import org.tensorflow.demo.OverlayView.DrawCallback;
+import org.tensorflow.demo.enr.Searcher;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.R;
 
-public class ClassifierActivity extends CameraActivity implements OnImageAvailableListener {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
+import static org.tensorflow.demo.R.id.results;
+
+public class ClassifierActivity extends CameraActivity implements OnImageAvailableListener, Searcher.Listener {
   private static final Logger LOGGER = new Logger();
 
   // These are the settings for the original v1 Inception model. If you want to
@@ -82,11 +92,27 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private Matrix frameToCropTransform;
   private Matrix cropToFrameTransform;
 
+  private Searcher searcher;
+  private List<ImageView> searchViews;
   private ResultsView resultsView;
 
   private BorderedText borderedText;
 
   private long lastProcessingTimeMs;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    searcher = new Searcher(this);
+    searchViews = new ArrayList<>();
+  }
+
+  @Override
+  public synchronized void onPause() {
+    super.onPause();
+    if (searcher != null)
+      searcher.saveCacheToDisk(this);
+  }
 
   @Override
   protected int getLayoutId() {
@@ -130,7 +156,11 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
       throw new RuntimeException("Error initializing TensorFlow!", e);
     }
 
-    resultsView = (ResultsView) findViewById(R.id.results);
+    searchViews.clear();
+    searchViews.add((ImageView) findViewById(R.id.image_view1));
+    searchViews.add((ImageView) findViewById(R.id.image_view2));
+    searchViews.add((ImageView) findViewById(R.id.image_view3));
+    resultsView = (ResultsView) findViewById(results);
     previewWidth = size.getWidth();
     previewHeight = size.getHeight();
 
@@ -231,12 +261,54 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
             resultsView.setResults(results);
+
+            // find images for these terms
+            int resultsCount = results.size();
+            for (int i = 0; i < searchViews.size(); i++) {
+                final ImageView searchView = searchViews.get(i);
+                if (i < resultsCount){
+                    Classifier.Recognition recognition = results.get(i);
+                    String searchTerm = recognition.getTitle().toLowerCase();
+                    searcher.findThumbnailsFor(searchTerm, i, ClassifierActivity.this);
+                } else {
+                  searchView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                      searchView.setImageResource(0);
+                      searchView.setVisibility(View.INVISIBLE);
+                    }
+                  });
+                }
+            }
+
             requestRender();
             computing = false;
           }
         });
 
     Trace.endSection();
+  }
+
+  @Override
+  public void onThumbnailsFound(String term, int index, ArrayList<String> thumbnailUrls) {
+      if (index < 0 || index >= searchViews.size())
+          return;
+      ImageView searchView = searchViews.get(index);
+      // fixing to 0 because consistency is good
+      int rndThumbIdx = 0; //new Random().nextInt(thumbnailUrls.size());
+      String thumbnailUrl = thumbnailUrls.get(rndThumbIdx);
+      Picasso.with(this).load(thumbnailUrl).into(searchView);
+      searchView.setVisibility(View.VISIBLE);
+  }
+
+  @Override
+  public void onThumbnailsSearchError(String term, int index, String errorString) {
+      if (index < 0 || index >= searchViews.size())
+          return;
+      ImageView searchView = searchViews.get(index);
+      searchView.setImageResource(0);
+      searchView.setVisibility(View.INVISIBLE);
+      LOGGER.e("Thumbnail Search Error: " + errorString);
   }
 
   @Override

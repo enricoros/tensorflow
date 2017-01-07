@@ -14,25 +14,52 @@
  limitations under the License.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
     <org.tensorflow.demo.AutoFitTextureView
         android:id="@+id/texture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignParentBottom="true"/>
 
     <org.tensorflow.demo.RecognitionScoreView
         android:id="@+id/results"
         android:layout_width="match_parent"
         android:layout_height="112dp"
-        android:layout_alignParentTop="true" />
+        android:layout_alignParentTop="true"/>
 
     <org.tensorflow.demo.OverlayView
         android:id="@+id/debug_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignParentBottom="true"/>
+
+    <ImageView
+        android:id="@+id/image_view3"
+        android:layout_width="80dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:elevation="2dp"/>
+
+    <ImageView
+        android:id="@+id/image_view2"
+        android:layout_width="128dp"
+        android:layout_height="96dp"
+        android:layout_marginBottom="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:elevation="4dp"/>
+
+    <ImageView
+        android:id="@+id/image_view1"
+        android:layout_width="200dp"
+        android:layout_height="150dp"
+        android:layout_marginBottom="67dp"
+        android:background="@android:color/white"
+        android:elevation="8dp"
+        android:layout_above="@+id/image_view3"
+        android:layout_centerHorizontal="true"/>
 
 </RelativeLayout>
